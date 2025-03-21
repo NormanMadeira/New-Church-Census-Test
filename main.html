@@ -1,54 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Census Database</title>
+    <title>Church Census Database</title>
     <link rel="stylesheet" href="/New-Church-Census-Test/styles.css">
+	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="/New-Church-Census-Test/firebase-config.js"></script>
 </head>
 <body>
-    <h1>Church Census Database</h1>
+    <h1>Church Census Database Query System</h1>
+    <button onclick="logout()" style="float: right;">Logout</button>
     
     <div id="filters">
         <div class="filter-row">
-            <select id="columnSelect"></select>
-            <select id="operatorSelect">
+            <select class="column-select"></select>
+            <select class="operator-select">
                 <option>Contains</option>
                 <option>Equals</option>
                 <option>Greater than</option>
                 <option>Less than</option>
             </select>
-            <input type="text" id="filterValue">
+            <input type="text" class="value-input">
         </div>
     </div>
     
-    <button onclick="addFilter()">Add Filter</button>
+    <button onclick="addFilter()">Add Filter (+)</button>
     <button onclick="loadData()">Search</button>
     
     <div id="results"></div>
 
     <script>
-        let currentData = [];
-        
+        // Authentication check
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) window.location.href = 'login.html';
+        });
+
+        let sheetData = [];
+        const columns = [
+            "COMMUNITY", "COMMUNITY CODE", "FAMILY UNIT NO", 
+            "ADDRESS", "HOUSING STATUS", "TITLE", "SURNAME",
+            "FIRST NAME", "GENDER", "DATE OF BIRTH", "AGE",
+            "RELATIONSHIP", "MARITAL STATUS", "YEAR IN PARISH",
+            "STATE OF ORIGIN", "CURRENT RESIDENCE", "JOB STATUS",
+            "QUALIFICATION", "PREFERRED LANGUAGE", "HEALTH STATUS"
+        ];
+
         async function loadData() {
             try {
                 const response = await fetch('https://script.google.com/macros/s/AKfycbzEpVolDJZYPGy1Zcnwz8IPokk3HvDR3Ngj24VEn2fuQeQ15TJd4cRoAw5aenQ7RECkNw/exec');
-                currentData = await response.json();
-                displayResults(currentData);
+                sheetData = await response.json();
+                populateColumnSelectors();
+                displayResults(sheetData);
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error loading data:', error);
             }
+        }
+
+        function populateColumnSelectors() {
+            document.querySelectorAll('.column-select').forEach(select => {
+                select.innerHTML = columns.map(col => 
+                    `<option>${col}</option>`
+                ).join('');
+            });
+        }
+
+        function addFilter() {
+            const newFilter = document.createElement('div');
+            newFilter.className = 'filter-row';
+            newFilter.innerHTML = `
+                <select class="column-select"></select>
+                <select class="operator-select">
+                    <option>Contains</option>
+                    <option>Equals</option>
+                    <option>Greater than</option>
+                    <option>Less than</option>
+                </select>
+                <input type="text" class="value-input">
+                <button onclick="this.parentElement.remove()">Remove</button>
+            `;
+            document.getElementById('filters').appendChild(newFilter);
+            populateColumnSelectors();
         }
 
         function applyFilters() {
             const filters = Array.from(document.querySelectorAll('.filter-row')).map(row => ({
-                column: row.querySelector('select').value,
-                operator: row.querySelectorAll('select')[1].value,
-                value: row.querySelector('input').value
+                column: row.querySelector('.column-select').value,
+                operator: row.querySelector('.operator-select').value,
+                value: row.querySelector('.value-input').value
             }));
 
-            return currentData.filter(row => 
-                filters.every(filter => {
-                    const cellValue = row[filter.columnIndex].toString().toLowerCase();
+            const headers = sheetData[0];
+            return sheetData.slice(1).filter(row => {
+                return filters.every(filter => {
+                    const colIndex = columns.indexOf(filter.column);
+                    const cellValue = row[colIndex].toString().toLowerCase();
                     const filterValue = filter.value.toLowerCase();
                     
                     switch(filter.operator) {
@@ -58,24 +104,50 @@
                         case 'Less than': return Number(cellValue) < Number(filterValue);
                         default: return true;
                     }
-                })
-            );
+                });
+            });
         }
 
         function displayResults(data) {
-            let html = '<table class="data-table"><tr>';
-            data[0].forEach(header => html += `<th>${header}</th>`);
-            html += '</tr>';
-
-            data.slice(1).forEach(row => {
+            let html = `<table>
+                <tr>${columns.map(col => `<th>${col}</th>`).join('')}</tr>`;
+            
+            data.forEach(row => {
                 html += '<tr>';
-                row.forEach(cell => {
-                    html += `<td contenteditable="true">${cell}</td>`;
+                row.forEach((cell, index) => {
+                    html += `<td contenteditable="true" 
+                              data-row="${row}" 
+                              data-col="${index}"
+                              onblur="updateCell(this)">${cell}</td>`;
                 });
                 html += '</tr>';
             });
             
             document.getElementById('results').innerHTML = html + '</table>';
+        }
+
+        async function updateCell(cell) {
+            const rowIndex = cell.parentElement.rowIndex - 1; // Account for header
+            const colIndex = cell.cellIndex;
+            const newValue = cell.innerText;
+            
+            try {
+                await fetch('https://script.google.com/macros/s/AKfycbzEpVolDJZYPGy1Zcnwz8IPokk3HvDR3Ngj24VEn2fuQeQ15TJd4cRoAw5aenQ7RECkNw/exec', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        row: rowIndex,
+                        column: colIndex,
+                        value: newValue
+                    })
+                });
+            } catch (error) {
+                console.error('Update failed:', error);
+                cell.innerText = sheetData[rowIndex + 1][colIndex]; // Revert
+            }
+        }
+
+        function logout() {
+            firebase.auth().signOut();
         }
 
         // Initial load

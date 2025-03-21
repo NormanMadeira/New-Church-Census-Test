@@ -5,40 +5,78 @@
     <link rel="stylesheet" href="/New-Church-Census-Test/styles.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="/New-Church-Census-Test/firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        .container { 
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        #error {
+            color: red;
+            min-height: 20px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <div class="login-container">
+    <div class="container">
         <h2>Church Census Login</h2>
-        <div class="input-group">
-            <input type="email" id="email" placeholder="Email">
-        </div>
-        <div class="input-group">
-            <input type="password" id="password" placeholder="Password">
-        </div>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
         <button onclick="login()">Login</button>
-        <p id="error" style="color: red;"></p>
+        <div id="error"></div>
     </div>
 
     <script>
-        function login() {
+        // Firebase configuration with Realtime Database URL
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_QusNDRMcRO5VtlRV5UMwrVnrRh-vPgQ",
+            authDomain: "new-church-census-test.firebaseapp.com",
+            databaseURL: "https://new-church-census-test-default-rtdb.firebaseio.com",
+            projectId: "new-church-census-test",
+            storageBucket: "new-church-census-test.appspot.com",
+            messagingSenderId: "380854562551",
+            appId: "1:380854562551:web:98a768d575e38032372df2"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('error');
+            
+            errorElement.textContent = ''; // Clear previous errors
 
-            firebase.auth().signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    return userCredential.user.getIdTokenResult();
-                })
-                .then((idTokenResult) => {
-                    if (idTokenResult.claims.admin) {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'main.html';
-                    }
-                })
-                .catch((error) => {
-                    document.getElementById('error').textContent = error.message;
-                });
+            try {
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Check admin status in Realtime Database
+                const adminRef = db.ref(`admins/${user.uid}`);
+                const snapshot = await adminRef.once('value');
+                
+                if (snapshot.exists()) {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'main.html';
+                }
+            } catch (error) {
+                errorElement.textContent = error.message;
+                console.error('Login Error:', error);
+            }
         }
     </script>
 </body>
