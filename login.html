@@ -38,10 +38,6 @@
     </div>
 
     <script>
-        // Get instances from firebase-config.js
-        const auth = firebase.auth();
-        const db = firebase.database();
-
         // Password toggle function
         function togglePassword() {
             const passwordField = document.getElementById('password');
@@ -67,13 +63,14 @@
 
             try {
                 // Sign out any existing sessions
-                await auth.signOut();
+                await firebase.auth().signOut();
                 
                 // Attempt login
-                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
                 const user = userCredential.user;
                 
                 // Check admin status
+                const db = firebase.database();
                 const adminRef = db.ref(`admins/${user.uid}`);
                 const snapshot = await adminRef.once('value');
                 
@@ -86,28 +83,7 @@
             }
         }
 
-        // Font Awesome verification
-        function checkFontAwesome() {
-            const style = document.createElement('style');
-            style.innerHTML = '.fa-eye:before { content: "\\f06e"; } .fa-eye-slash:before { content: "\\f070"; }';
-            document.head.appendChild(style);
-            
-            const testIcon = document.createElement('i');
-            testIcon.classList.add('fas', 'fa-eye-slash');
-            document.body.appendChild(testIcon);
-            
-            setTimeout(() => {
-                if (window.getComputedStyle(testIcon, '::before').content === '"\\f070"') {
-                    console.log("Font Awesome loaded correctly!");
-                } else {
-                    console.error("Font Awesome not loaded properly!");
-                }
-                testIcon.remove();
-            }, 100);
-        }
-
         // Initial checks
-        checkFontAwesome();
         console.log("Active Firebase Config:", firebase.app().options);
     </script>
 </body>
