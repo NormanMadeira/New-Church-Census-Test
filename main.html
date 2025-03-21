@@ -13,24 +13,26 @@
     <h1>Church Census Database Query System</h1>
     <button onclick="logout()" style="float: right;">Logout</button>
     
-    <div class="filter-section">
-        <div id="filters">
-            <div class="filter-row">
-                <select class="column-select"></select>
-                <select class="operator-select">
-                    <option>Contains</option>
-                    <option>Equals</option>
-                    <option>Greater than</option>
-                    <option>Less than</option>
-                </select>
-                <input type="text" class="value-input">
-                <button onclick="this.parentElement.remove()">Remove</button>
-            </div>
-        </div>
-        <button class="btn" onclick="addFilter()">Add Filter</button>
-        <button class="btn" onclick="loadData()">Refresh Data</button>
-        <button class="btn" onclick="applyFilters()">Search</button>
-    </div>
+	<div class="filter-section">
+		<div id="filters">
+			<div class="filter-row">
+				<select class="column-select" onchange="updateValueDropdown(this)"></select>
+				<select class="operator-select">
+					<option>Contains</option>
+					<option>Equals</option>
+					<option>Greater than</option>
+					<option>Less than</option>
+					<option>Greater than or equal to</option>
+					<option>Less than or equal to</option>
+					<option>Is between</option>
+				</select>
+				<select class="value-select"></select>
+				<button onclick="this.parentElement.remove()">Remove</button>
+			</div>
+		</div>
+		<button class="btn" onclick="addFilter()">Add Filter</button>
+		<button class="btn" onclick="applyFilters()">Search</button>
+	</div>
 
     <div id="results"></div>
 
@@ -44,30 +46,34 @@
     let sheetData = [];
     let columns = []; // Populated from column B headers
 
-    async function loadData() {
-        try {
-            const response = await fetch('https://script.google.com/macros/s/AKfycbzEpVolDJZYPGy1Zcnwz8IPokk3HvDR3Ngj24VEn2fuQeQ15TJd4cRoAw5aenQ7RECkNw/exec');
-            const fullData = await response.json();
-            
-            // First array item is headers starting from column B
-            columns = fullData[0];
-            // Remaining items are data rows starting from column B
-            sheetData = fullData.slice(1);
-            
-            populateColumnSelectors();
-            displayResults(sheetData);
-        } catch (error) {
-            console.error('Error loading data:', error);
-        }
-    }
+	async function loadData() {
+		try {
+			const response = await fetch('https://script.google.com/macros/s/AKfycbzEpVolDJZYPGy1Zcnwz8IPokk3HvDR3Ngj24VEn2fuQeQ15TJd4cRoAw5aenQ7RECkNw/exec');
+			const fullData = await response.json();
+			
+			// Set columns from first row
+			columns = fullData[0];
+			// Store data without headers
+			sheetData = fullData.slice(1);
+			
+			// Populate dropdowns
+			populateColumnSelectors();
+			updateValueDropdown(document.querySelector('.column-select'));
+			displayResults(sheetData);
+		} catch (error) {
+			console.error('Error loading data:', error);
+		}
+	}
 
-    function populateColumnSelectors() {
-        document.querySelectorAll('.column-select').forEach(select => {
-            select.innerHTML = columns.map(col => 
-                `<option>${col}</option>`
-            ).join('');
-        });
-    }
+	// Populate column dropdown
+	function populateColumnSelectors() {
+		const columnSelects = document.querySelectorAll('.column-select');
+		columnSelects.forEach(select => {
+			select.innerHTML = columns.map(col => 
+				`<option>${col}</option>`
+			).join('');
+		});
+	}
 
     function addFilter() {
         const newFilter = document.createElement('div');
@@ -87,6 +93,38 @@
         populateColumnSelectors();
     }
 
+    // Get unique values for the selected column
+    const colIndex = columns.indexOf(columnName);
+    const uniqueValues = [...new Set(sheetData.map(row => row[colIndex]))];
+
+    // Populate value dropdown
+    valueSelect.innerHTML = uniqueValues.map(value => 
+        `<option>${value}</option>`
+    ).join('');
+}
+
+	// Add new filter row
+	function addFilter() {
+		const newFilter = document.createElement('div');
+		newFilter.className = 'filter-row';
+		newFilter.innerHTML = `
+			<select class="column-select" onchange="updateValueDropdown(this)"></select>
+			<select class="operator-select">
+				<option>Contains</option>
+				<option>Equals</option>
+				<option>Greater than</option>
+				<option>Less than</option>
+				<option>Greater than or equal to</option>
+				<option>Less than or equal to</option>
+				<option>Is between</option>
+			</select>
+			<select class="value-select"></select>
+			<button onclick="this.parentElement.remove()">Remove</button>
+		`;
+		document.getElementById('filters').appendChild(newFilter);
+		populateColumnSelectors();
+	}
+
     function applyFilters() {
         const filters = Array.from(document.querySelectorAll('.filter-row')).map(row => ({
             column: row.querySelector('.column-select').value,
@@ -95,25 +133,37 @@
         }));
 
         const filteredData = sheetData.filter(row => {
-            return filters.every(filter => {
-                const colIndex = columns.indexOf(filter.column);
-                const cellValue = row[colIndex]?.toString().toLowerCase() || '';
-                const filterValue = filter.value.toLowerCase();
-                
-                switch(filter.operator) {
-                    case 'Contains': return cellValue.includes(filterValue);
-                    case 'Equals': return cellValue === filterValue;
-                    case 'Greater than': 
-                        return !isNaN(cellValue) && Number(cellValue) > Number(filterValue);
-                    case 'Less than': 
-                        return !isNaN(cellValue) && Number(cellValue) < Number(filterValue);
-                    default: return true;
-                }
-            });
-        });
-        
-        displayResults(filteredData);
-    }
+	// Apply filters
+	function applyFilters() {
+		const filters = Array.from(document.querySelectorAll('.filter-row')).map(row => ({
+			column: row.querySelector('.column-select').value,
+			operator: row.querySelector('.operator-select').value,
+			value: row.querySelector('.value-select').value
+		}));
+
+		const filteredData = sheetData.filter(row => {
+			return filters.every(filter => {
+				const colIndex = columns.indexOf(filter.column);
+				const cellValue = row[colIndex]?.toString().toLowerCase() || '';
+				const filterValue = filter.value.toLowerCase();
+				
+				switch(filter.operator) {
+					case 'Contains': return cellValue.includes(filterValue);
+					case 'Equals': return cellValue === filterValue;
+					case 'Greater than': return !isNaN(cellValue) && Number(cellValue) > Number(filterValue);
+					case 'Less than': return !isNaN(cellValue) && Number(cellValue) < Number(filterValue);
+					case 'Greater than or equal to': return !isNaN(cellValue) && Number(cellValue) >= Number(filterValue);
+					case 'Less than or equal to': return !isNaN(cellValue) && Number(cellValue) <= Number(filterValue);
+					case 'Is between': 
+						const [min, max] = filterValue.split('-').map(Number);
+						return !isNaN(cellValue) && Number(cellValue) >= min && Number(cellValue) <= max;
+					default: return true;
+				}
+			});
+		});
+		
+		displayResults(filteredData);
+	}
 
     function displayResults(data) {
         let html = `<table class="data-table">
