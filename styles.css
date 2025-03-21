@@ -53,6 +53,19 @@ body {
   position: relative;
 }
 
+.password-toggle {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #95a5a6;
+}
+
+.password-toggle:hover {
+    color: var(--secondary);
+}
+
 .input-group input {
   width: 100%;
   padding: 1rem;

@@ -23,6 +23,9 @@
 			<div class="input-group">
 				<input type="password" id="password" required>
 				<label for="password"><i class="fas fa-lock"></i> Password</label>
+				<span class="password-toggle" onclick="togglePassword()">
+					<i class="fas fa-eye"></i>
+				</span>
 			</div>
 			
 			<button class="btn" onclick="login()">Sign In</button>
@@ -74,6 +77,42 @@
                 document.getElementById('error').textContent = error.message;
                 console.error('Login Error:', error);
             }
+			
+			function togglePassword() {
+				const passwordField = document.getElementById('password');
+				const eyeIcon = document.querySelector('.password-toggle i');
+				
+				if (passwordField.type === 'password') {
+					passwordField.type = 'text'; // Show password
+					eyeIcon.classList.remove('fa-eye'); // Remove eye icon
+					eyeIcon.classList.add('fa-eye-slash'); // Add eye-slash icon
+				} else {
+					passwordField.type = 'password'; // Hide password
+					eyeIcon.classList.remove('fa-eye-slash'); // Remove eye-slash icon
+					eyeIcon.classList.add('fa-eye'); // Add eye icon
+				}
+			}
+			
+			function checkFontAwesome() {
+				const style = document.createElement('style');
+				style.innerHTML = '.fa-eye:before { content: "\\f06e"; } .fa-eye-slash:before { content: "\\f070"; }';
+				document.head.appendChild(style);
+				
+				const testIcon = document.createElement('i');
+				testIcon.classList.add('fas', 'fa-eye-slash');
+				document.body.appendChild(testIcon);
+				
+				setTimeout(() => {
+					if (window.getComputedStyle(testIcon, '::before').content === '"\\f070"') {
+						console.log("Font Awesome loaded correctly!");
+					} else {
+						console.error("Font Awesome not loaded properly!");
+					}
+					testIcon.remove();
+				}, 100);
+			}
+
+			checkFontAwesome();
         }
     </script>
 </body>
