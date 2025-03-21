@@ -65,20 +65,21 @@
 		}
 
 		// Custom Modal Logic
-		let modalResolve;
+		let modalPromiseResolver = null;
 
 		function showModal(message, isPrompt = true) {
-			const modal = document.getElementById('customModal');
-			const input = document.getElementById('modalInput');
-			
-			document.getElementById('modalMessage').textContent = message;
-			input.style.display = isPrompt ? 'block' : 'none';
-			modal.style.display = 'block';
-			
-			if (isPrompt) input.value = '';
-			
 			return new Promise((resolve) => {
-				modalResolve = resolve;
+				const modal = document.getElementById('customModal');
+				const input = document.getElementById('modalInput');
+				
+				document.getElementById('modalMessage').textContent = message;
+				input.style.display = isPrompt ? 'block' : 'none';
+				modal.style.display = 'block';
+				
+				modalPromiseResolver = (value) => {
+					modal.style.display = 'none';
+					resolve(value);
+				};
 			});
 		}
 
@@ -91,40 +92,47 @@
 		document.getElementById('modalConfirm').addEventListener('click', () => {
 			const input = document.getElementById('modalInput');
 			const value = input.style.display === 'none' ? true : input.value;
-			document.getElementById('customModal').style.display = 'none';
-			modalResolve(value);
+			if (modalPromiseResolver) modalPromiseResolver(value);
 		});
 
 		document.getElementById('modalCancel').addEventListener('click', () => {
-			document.getElementById('customModal').style.display = 'none';
-			modalResolve(null);
+			if (modalPromiseResolver) modalPromiseResolver(null);
 		});
 
 		// Modified createUser function
 		async function createUser() {
-			const email = await showModal("Enter email:");
-			if (!email) return;
-			
-			const password = await showModal("Enter password:");
-			if (!password) return;
-
-			const isAdmin = await showModal("Make admin? (yes/no)", false);
-			
 			try {
+				// Get email
+				const email = await showModal("Enter email:");
+				if (!email) return;
+				
+				// Get password
+				const password = await showModal("Enter password:");
+				if (!password) return;
+
+				// Get admin status
+				const isAdmin = await showModal("Make admin? (yes/no)", false);
+				
+				// Create user
 				const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
 				const uid = userCredential.user.uid;
 				
+				// Update database
 				await firebase.database().ref(`users/${uid}`).set({
 					email: email,
 					created: Date.now()
 				});
 				
-				if (isAdmin) {
+				if (isAdmin === 'yes') { // Changed from boolean check to string comparison
 					await firebase.database().ref(`admins/${uid}`).set(true);
 				}
-				loadUsers();
+				
+				// Force refresh user list
+				await loadUsers();
+				
 			} catch (error) {
-				alert(error.message);
+				console.error('User creation failed:', error);
+				alert(`Error: ${error.message}`);
 			}
 		}
 
