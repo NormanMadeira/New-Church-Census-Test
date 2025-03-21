@@ -2,7 +2,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyD_QusNDRMcRO5VtlRV5UMwrVnrRh-vPgQ",
   authDomain: "new-church-census-test.firebaseapp.com",
-  databaseURL: "https://new-church-census-test-default-rtdb.firebaseio.com", // Add this
+  databaseURL: "https://new-church-census-test-default-rtdb.asia-southeast1.firebasedatabase.app", // Updated
   projectId: "new-church-census-test",
   storageBucket: "new-church-census-test.appspot.com",
   messagingSenderId: "380854562551",
