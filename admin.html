@@ -64,19 +64,56 @@
 			}
 		}
 
+		// Custom Modal Logic
+		let modalResolve;
+
+		function showModal(message, isPrompt = true) {
+			const modal = document.getElementById('customModal');
+			const input = document.getElementById('modalInput');
+			
+			document.getElementById('modalMessage').textContent = message;
+			input.style.display = isPrompt ? 'block' : 'none';
+			modal.style.display = 'block';
+			
+			if (isPrompt) input.value = '';
+			
+			return new Promise((resolve) => {
+				modalResolve = resolve;
+			});
+		}
+
+		// Modal Event Listeners
+		document.querySelector('.close').addEventListener('click', () => {
+			document.getElementById('customModal').style.display = 'none';
+			modalResolve(null);
+		});
+
+		document.getElementById('modalConfirm').addEventListener('click', () => {
+			const input = document.getElementById('modalInput');
+			const value = input.style.display === 'none' ? true : input.value;
+			document.getElementById('customModal').style.display = 'none';
+			modalResolve(value);
+		});
+
+		document.getElementById('modalCancel').addEventListener('click', () => {
+			document.getElementById('customModal').style.display = 'none';
+			modalResolve(null);
+		});
+
 		// Modified createUser function
 		async function createUser() {
-			const email = prompt("Enter email:");
-			const password = prompt("Enter password:");
-			if (!email || !password) return;
+			const email = await showModal("Enter email:");
+			if (!email) return;
+			
+			const password = await showModal("Enter password:");
+			if (!password) return;
 
-			const isAdmin = confirm("Make admin?");
-
+			const isAdmin = await showModal("Make admin? (yes/no)", false);
+			
 			try {
 				const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
 				const uid = userCredential.user.uid;
 				
-				// Store user in your database
 				await firebase.database().ref(`users/${uid}`).set({
 					email: email,
 					created: Date.now()
@@ -91,16 +128,34 @@
 			}
 		}
 
-        async function deleteUser(uid) {
-            if (!confirm("Delete this user permanently?")) return;
-            try {
-                await firebase.auth().deleteUser(uid);
-                await firebase.database().ref(`admins/${uid}`).remove();
-                loadUsers();
-            } catch (error) {
-                alert("Deletion failed: " + error.message);
-            }
-        }
+		// Modified deleteUser function
+		async function deleteUser(uid) {
+			const confirm = await showModal("Delete this user permanently?", false);
+			if (!confirm) return;
+			
+			try {
+				await firebase.auth().deleteUser(uid);
+				await firebase.database().ref(`admins/${uid}`).remove();
+				await firebase.database().ref(`users/${uid}`).remove();
+				loadUsers();
+			} catch (error) {
+				alert("Deletion failed: " + error.message);
+			}
+		}
+				
     </script>
+	
+	<div id="customModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <p id="modalMessage"></p>
+        <input type="text" id="modalInput" class="modal-input" style="display: none;">
+        <div class="modal-buttons">
+            <button class="btn" id="modalConfirm">OK</button>
+            <button class="btn" id="modalCancel">Cancel</button>
+        </div>
+    </div>
+	</div>
+	
 </body>
 </html>

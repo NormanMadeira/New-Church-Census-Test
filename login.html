@@ -85,6 +85,57 @@
 
         // Initial checks
         console.log("Active Firebase Config:", firebase.app().options);
+		
+		// Custom Modal Logic
+		let modalResolve;
+
+		function showModal(message, isPrompt = true) {
+			const modal = document.getElementById('customModal');
+			const input = document.getElementById('modalInput');
+			
+			document.getElementById('modalMessage').textContent = message;
+			input.style.display = isPrompt ? 'block' : 'none';
+			modal.style.display = 'block';
+			
+			if (isPrompt) input.value = '';
+			
+			return new Promise((resolve) => {
+				modalResolve = resolve;
+			});
+		}
+
+		// Modal Event Listeners
+		document.querySelector('.close').addEventListener('click', () => {
+			document.getElementById('customModal').style.display = 'none';
+			modalResolve(null);
+		});
+
+		document.getElementById('modalConfirm').addEventListener('click', () => {
+			const input = document.getElementById('modalInput');
+			const value = input.style.display === 'none' ? true : input.value;
+			document.getElementById('customModal').style.display = 'none';
+			modalResolve(value);
+		});
+
+		document.getElementById('modalCancel').addEventListener('click', () => {
+			document.getElementById('customModal').style.display = 'none';
+			modalResolve(null);
+		});
+		
     </script>
+	
+	<!-- Custom Modal -->
+	<div id="customModal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<p id="modalMessage"></p>
+			<input type="text" id="modalInput" class="modal-input" style="display: none;">
+			<div class="modal-buttons">
+				<button class="btn" id="modalConfirm">OK</button>
+				<button class="btn" id="modalCancel">Cancel</button>
+			</div>
+		</div>
+	</div>
+	
 </body>
 </html>
