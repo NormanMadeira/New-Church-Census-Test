@@ -39,44 +39,57 @@
             return snapshot.exists();
         }
 
-        async function createUser() {
-            const email = prompt("Enter email:");
-            const password = prompt("Enter password:");
-            if (!email || !password) return;
+		// Modified loadUsers function
+		async function loadUsers() {
+			try {
+				// Get list of users from your own database node
+				const snapshot = await firebase.database().ref('users').once('value');
+				const users = snapshot.val() || {};
+				
+				let html = `<table class="data-table">
+					<tr><th>Email</th><th>Role</th><th>Action</th></tr>`;
+				
+				for (const uid in users) {
+					const isAdmin = await checkAdmin(uid);
+					html += `<tr>
+						<td>${users[uid].email}</td>
+						<td>${isAdmin ? 'Admin' : 'User'}</td>
+						<td><button onclick="deleteUser('${uid}')">Delete</button></td>
+					</tr>`;
+				}
+				
+				document.getElementById('userList').innerHTML = html + '</table>';
+			} catch (error) {
+				console.error("Failed to load users:", error);
+			}
+		}
 
-            const isAdmin = confirm("Make admin?");
+		// Modified createUser function
+		async function createUser() {
+			const email = prompt("Enter email:");
+			const password = prompt("Enter password:");
+			if (!email || !password) return;
 
-            try {
-                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                if (isAdmin) {
-                    await firebase.database().ref(`admins/${userCredential.user.uid}`).set(true);
-                }
-                loadUsers();
-            } catch (error) {
-                alert(error.message);
-            }
-        }
+			const isAdmin = confirm("Make admin?");
 
-        async function loadUsers() {
-            try {
-                const users = await firebase.auth().listUsers();
-                let html = `<table class="data-table">
-                    <tr><th>Email</th><th>Role</th><th>Action</th></tr>`;
-                
-                for (const user of users.users) {
-                    const isAdmin = await checkAdmin(user.uid);
-                    html += `<tr>
-                        <td>${user.email}</td>
-                        <td>${isAdmin ? 'Admin' : 'User'}</td>
-                        <td><button onclick="deleteUser('${user.uid}')">Delete</button></td>
-                    </tr>`;
-                }
-                
-                document.getElementById('userList').innerHTML = html + '</table>';
-            } catch (error) {
-                console.error("Failed to load users:", error);
-            }
-        }
+			try {
+				const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+				const uid = userCredential.user.uid;
+				
+				// Store user in your database
+				await firebase.database().ref(`users/${uid}`).set({
+					email: email,
+					created: Date.now()
+				});
+				
+				if (isAdmin) {
+					await firebase.database().ref(`admins/${uid}`).set(true);
+				}
+				loadUsers();
+			} catch (error) {
+				alert(error.message);
+			}
+		}
 
         async function deleteUser(uid) {
             if (!confirm("Delete this user permanently?")) return;
