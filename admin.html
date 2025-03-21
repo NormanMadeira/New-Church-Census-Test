@@ -3,47 +3,53 @@
 <head>
     <title>Admin Panel</title>
     <link rel="stylesheet" href="/New-Church-Census-Test/styles.css">
+    <!-- Firebase Scripts FIRST -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="/New-Church-Census-Test/firebase-config.js"></script>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-	<div class="admin-container">
-		<h1>User Management</h1>
-		<button class="btn" onclick="createUser()">Create New User</button>
-		<div id="userList">
-			<table class="data-table">
-				<!-- User list will be populated here -->
-			</table>
-		</div>
-	</div>
+    <div class="admin-container">
+        <h1>User Management</h1>
+        <button class="btn" onclick="createUser()">Create New User</button>
+        <div id="userList"></div>
+    </div>
 
     <script>
-        const db = firebase.database();
-        
+
         firebase.auth().onAuthStateChanged(async (user) => {
-            if (!user) window.location.href = 'login.html';
-            const isAdmin = await checkAdmin(user.uid);
-            if (!isAdmin) window.location.href = 'main.html';
-            loadUsers();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            try {
+                const isAdmin = await checkAdmin(user.uid);
+                if (!isAdmin) window.location.href = 'main.html';
+                loadUsers();
+            } catch (error) {
+                console.error("Admin check failed:", error);
+            }
         });
 
         async function checkAdmin(uid) {
-            const snapshot = await db.ref(`admins/${uid}`).once('value');
+            const snapshot = await firebase.database().ref(`admins/${uid}`).once('value');
             return snapshot.exists();
         }
 
         async function createUser() {
             const email = prompt("Enter email:");
             const password = prompt("Enter password:");
+            if (!email || !password) return;
+
             const isAdmin = confirm("Make admin?");
 
             try {
-                const { user } = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
                 if (isAdmin) {
-                    await db.ref(`admins/${user.uid}`).set(true);
+                    await firebase.database().ref(`admins/${userCredential.user.uid}`).set(true);
                 }
                 loadUsers();
             } catch (error) {
@@ -52,25 +58,35 @@
         }
 
         async function loadUsers() {
-            const users = await firebase.auth().listUsers();
-            let html = `<table><tr><th>Email</th><th>Role</th><th>Action</th></tr>`;
-            
-            for (const user of users.users) {
-                const isAdmin = await checkAdmin(user.uid);
-                html += `<tr>
-                    <td>${user.email}</td>
-                    <td>${isAdmin ? 'Admin' : 'User'}</td>
-                    <td><button onclick="deleteUser('${user.uid}')">Delete</button></td>
-                </tr>`;
+            try {
+                const users = await firebase.auth().listUsers();
+                let html = `<table class="data-table">
+                    <tr><th>Email</th><th>Role</th><th>Action</th></tr>`;
+                
+                for (const user of users.users) {
+                    const isAdmin = await checkAdmin(user.uid);
+                    html += `<tr>
+                        <td>${user.email}</td>
+                        <td>${isAdmin ? 'Admin' : 'User'}</td>
+                        <td><button onclick="deleteUser('${user.uid}')">Delete</button></td>
+                    </tr>`;
+                }
+                
+                document.getElementById('userList').innerHTML = html + '</table>';
+            } catch (error) {
+                console.error("Failed to load users:", error);
             }
-            
-            document.getElementById('userList').innerHTML = html + '</table>';
         }
 
         async function deleteUser(uid) {
-            await firebase.auth().deleteUser(uid);
-            await db.ref(`admins/${uid}`).remove();
-            loadUsers();
+            if (!confirm("Delete this user permanently?")) return;
+            try {
+                await firebase.auth().deleteUser(uid);
+                await firebase.database().ref(`admins/${uid}`).remove();
+                loadUsers();
+            } catch (error) {
+                alert("Deletion failed: " + error.message);
+            }
         }
     </script>
 </body>
