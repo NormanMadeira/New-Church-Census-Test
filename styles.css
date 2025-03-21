@@ -249,7 +249,7 @@ select:focus, input:focus {
 }
 
 .modal-content {
-    background-color: #fefefe;
+    background-color: #fff;
     margin: 15% auto;
     padding: 20px;
     border: 1px solid #888;
@@ -267,16 +267,11 @@ select:focus, input:focus {
 }
 
 /* Close Button */
-.close {
-    cursor: pointer;
+.close-btn {
     position: absolute;
     right: 15px;
     top: 5px;
-    font-size: 28px;
-    font-weight: bold;
-    color: #aaa;
-    transition: color 0.2s;
-}
+    font
 
 .close:hover {
     color: #000;
