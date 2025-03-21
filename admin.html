@@ -7,11 +7,18 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="/New-Church-Census-Test/firebase-config.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <h1>User Management</h1>
-    <button onclick="createUser()">Create New User</button>
-    <div id="userList"></div>
+	<div class="admin-container">
+		<h1>User Management</h1>
+		<button class="btn" onclick="createUser()">Create New User</button>
+		<div id="userList">
+			<table class="data-table">
+				<!-- User list will be populated here -->
+			</table>
+		</div>
+	</div>
 
     <script>
         const db = firebase.database();
