@@ -249,13 +249,8 @@ select:focus, input:focus {
 }
 
 .modal-content {
-    background-color: #fff;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 400px;
-    position: relative;
+    padding: 2rem;
+    border-radius: 8px;
 }
 
 /* Modal Buttons */
@@ -279,7 +274,13 @@ select:focus, input:focus {
 
 .modal-input {
     width: 100%;
-    padding: 8px;
-    margin: 10px 0;
-    box-sizing: border-box;
+    padding: 0.8rem;
+    margin: 1rem 0;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 20px;
 }

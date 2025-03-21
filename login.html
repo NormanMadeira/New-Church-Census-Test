@@ -33,6 +33,7 @@
         </div>
         
         <button class="btn" onclick="login()">Sign In</button>
+		<button id="logoutBtn" style="display: none;" onclick="logout()">Logout</button>
         
         <div id="error" class="alert alert-error" style="display: none;"></div>
     </div>
@@ -140,6 +141,10 @@
 				}
 			}
 		});
+		
+    firebase.auth().onAuthStateChanged(user => {
+        document.getElementById('logoutBtn').style.display = user ? 'block' : 'none';
+    });
 		
     </script>
 	

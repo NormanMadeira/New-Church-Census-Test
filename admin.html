@@ -67,22 +67,29 @@
 		// Custom Modal Logic
 		let modalPromiseResolver = null;
 
-		function showModal(message, isPrompt = true) {
-			return new Promise((resolve) => {
+		// Updated showModal function
+		function showModal(message) {
+			return new Promise(resolve => {
 				const modal = document.getElementById('customModal');
-				if (!modal) {
-					console.error('Modal element not found!');
-					return;
-				}
 				const input = document.getElementById('modalInput');
 				
+				input.type = currentCreationStep === 2 ? 'password' : 'text';
 				document.getElementById('modalMessage').textContent = message;
-				input.style.display = isPrompt ? 'block' : 'none';
 				modal.style.display = 'block';
 				
-				modalPromiseResolver = (value) => {
+				const cleanup = () => {
 					modal.style.display = 'none';
-					resolve(value);
+					input.value = '';
+				};
+
+				document.getElementById('modalConfirm').onclick = () => {
+					resolve(input.value || true);
+					cleanup();
+				};
+
+				document.getElementById('modalCancel').onclick = () => {
+					resolve(null);
+					cleanup();
 				};
 			});
 		}
@@ -104,44 +111,46 @@
 		});
 
 		// Modified createUser function
+		let currentCreationStep = 0;
+		let newUserData = {};
+
 		async function createUser() {
 			try {
-				// Get email
-				const email = await showModal("Enter email:");
-				if (!email || email.trim() === "") return;
+				currentCreationStep = 1;
+				const email = await showModal("Enter user email address:");
+				if (!email) return;
 
-				// Get password
-				const password = await showModal("Enter password:");
-				if (!password || password.trim() === "") return;
+				currentCreationStep = 2;
+				const password = await showModal("Enter password for new user:");
+				if (!password) return;
 
-				// Get admin status
-				const isAdmin = await showModal("Make admin? (Enter 'yes' or 'no')", false);
+				currentCreationStep = 3;
+				const isAdmin = await showModal("Make admin? (Type 'yes' to confirm)");
 				
 				// Create user
 				const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-				const uid = userCredential.user.uid;
 				
-				// Save user data
-				await firebase.database().ref(`users/${uid}`).set({
+				// Save to database
+				await firebase.database().ref(`users/${userCredential.user.uid}`).set({
 					email: email,
 					created: Date.now()
 				});
-				
-				// Set admin status
-				if (isAdmin && isAdmin.toLowerCase() === 'yes') {
-					await firebase.database().ref(`admins/${uid}`).set(true);
+
+				if (isAdmin?.toLowerCase() === 'yes') {
+					await firebase.database().ref(`admins/${userCredential.user.uid}`).set(true);
 				}
-				
-				// Refresh list
-				loadUsers();
+
 				alert('User created successfully!');
+				loadUsers();
 
 			} catch (error) {
 				console.error('User creation failed:', error);
 				alert(`Error: ${error.message}`);
+			} finally {
+				currentCreationStep = 0;
+				newUserData = {};
 			}
 		}
-
 		// Modified deleteUser function
 		async function deleteUser(uid) {
 			const confirm = await showModal("Delete this user permanently?", false);
