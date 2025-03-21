@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Census Database</title>
+    <style>
+        .filter-row { margin: 10px 0; }
+        table { border-collapse: collapse; width: 100%; }
+        td { border: 1px solid #ddd; padding: 8px; }
+        [contenteditable="true"] { background: #fff9c4; }
+    </style>
+</head>
+<body>
+    <h1>Church Census Database</h1>
+    
+    <!-- Filter Controls -->
+    <div id="filters">
+        <div class="filter-row">
+            <select id="columnSelect"></select>
+            <select id="operatorSelect">
+                <option>Contains</option>
+                <option>Equals</option>
+            </select>
+            <input type="text" id="filterValue">
+        </div>
+    </div>
+    
+    <button onclick="addFilter()">Add Filter</button>
+    <button onclick="loadData()">Search</button>
+    
+    <!-- Data Display -->
+    <div id="results"></div>
+
+    <script>
+        // Basic Google Sheets integration
+        async function loadData() {
+            const response = await fetch('YOUR_APPS_SCRIPT_URL');
+            const data = await response.json();
+            
+            let html = '<table>';
+            data.forEach((row, index) => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += `<td contenteditable="true" onblur="updateCell(${index}, this)">${cell}</td>`;
+                });
+                html += '</tr>';
+            });
+            document.getElementById('results').innerHTML = html + '</table>';
+        }
+
+        function updateCell(rowIndex, cellElement) {
+            const newValue = cellElement.innerText;
+            // Implement Google Sheets update logic
+        }
+
+        // Initial load
+        loadData();
+    </script>
+</body>
+</html>

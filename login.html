@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Church Login</title>
+    <style>
+        .container { max-width: 300px; margin: 50px auto; }
+        input, button { margin: 10px 0; width: 100%; padding: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Church Census Login</h2>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <p id="error" style="color: red;"></p>
+    </div>
+
+    <script>
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Check if admin
+                    userCredential.user.getIdTokenResult()
+                        .then((idTokenResult) => {
+                            if (!!idTokenResult.claims.admin) {
+                                window.location.href = 'admin.html';
+                            } else {
+                                window.location.href = 'main.html';
+                            }
+                        });
+                })
+                .catch((error) => {
+                    document.getElementById('error').innerText = error.message;
+                });
+        }
+    </script>
+</body>
+</html>

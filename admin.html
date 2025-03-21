@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h1>User Management</h1>
+    <button onclick="createUser()">Create New User</button>
+    <div id="userList"></div>
+
+    <script>
+        function createUser() {
+            const email = prompt("Enter new user email:");
+            const password = prompt("Enter temporary password:");
+            const isAdmin = confirm("Is this user an admin?");
+
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    if(isAdmin) {
+                        return userCredential.user.updateProfile({
+                            customClaims: { admin: true }
+                        });
+                    }
+                })
+                .then(() => loadUsers())
+                .catch(error => alert(error.message));
+        }
+
+        function loadUsers() {
+            firebase.auth().listUsers()
+                .then((userRecords) => {
+                    let html = `<table>
+                        <tr><th>Email</th><th>Role</th><th>Action</th></tr>`;
+                    
+                    userRecords.users.forEach(user => {
+                        html += `<tr>
+                            <td>${user.email}</td>
+                            <td>${user.customClaims?.admin ? 'Admin' : 'User'}</td>
+                            <td><button onclick="deleteUser('${user.uid}')">Delete</button></td>
+                        </tr>`;
+                    });
+                    
+                    document.getElementById('userList').innerHTML = html + '</table>';
+                });
+        }
+
+        function deleteUser(uid) {
+            firebase.auth().deleteUser(uid)
+                .then(() => loadUsers())
+                .catch(error => alert(error.message));
+        }
+
+        // Initial load
+        loadUsers();
+    </script>
+</body>
+</html>
