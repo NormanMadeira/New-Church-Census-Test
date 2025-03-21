@@ -258,24 +258,28 @@ select:focus, input:focus {
     position: relative;
 }
 
+/* Modal Buttons */
 .modal-buttons {
-    text-align: right;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
     margin-top: 20px;
 }
 
+/* Close Button */
 .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
+    cursor: pointer;
     position: absolute;
     right: 15px;
     top: 5px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    transition: color 0.2s;
 }
 
 .close:hover {
-    color: black;
-    cursor: pointer;
+    color: #000;
 }
 
 .modal-input {

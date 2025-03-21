@@ -142,19 +142,34 @@
 				alert("Deletion failed: " + error.message);
 			}
 		}
-				
+		
+		// Add this modal initialization code
+		document.addEventListener('DOMContentLoaded', () => {
+			document.querySelector('.close').addEventListener('click', () => {
+				document.getElementById('customModal').style.display = 'none';
+			});
+			
+			window.onclick = function(event) {
+				const modal = document.getElementById('customModal');
+				if (event.target == modal) {
+					modal.style.display = "none";
+				}
+			}
+		});
+		
     </script>
 	
+	<!-- Custom Modal -->
 	<div id="customModal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <p id="modalMessage"></p>
-        <input type="text" id="modalInput" class="modal-input" style="display: none;">
-        <div class="modal-buttons">
-            <button class="btn" id="modalConfirm">OK</button>
-            <button class="btn" id="modalCancel">Cancel</button>
-        </div>
-    </div>
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<p id="modalMessage"></p>
+			<input type="text" id="modalInput" class="modal-input" style="display: none;">
+			<div class="modal-buttons">
+				<button class="btn" id="modalConfirm">OK</button>
+				<button class="btn" id="modalCancel">Cancel</button>
+			</div>
+		</div>
 	</div>
 	
 </body>

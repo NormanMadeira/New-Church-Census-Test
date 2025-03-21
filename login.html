@@ -122,6 +122,20 @@
 			modalResolve(null);
 		});
 		
+		    // Add this modal initialization code
+		document.addEventListener('DOMContentLoaded', () => {
+			document.querySelector('.close').addEventListener('click', () => {
+				document.getElementById('customModal').style.display = 'none';
+			});
+			
+			window.onclick = function(event) {
+				const modal = document.getElementById('customModal');
+				if (event.target == modal) {
+					modal.style.display = "none";
+				}
+			}
+		});
+		
     </script>
 	
 	<!-- Custom Modal -->
