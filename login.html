@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+	<meta http-equiv="Permissions-Policy" content="interest-cohort=()">
 </head>
 <body>
 		<div class="login-container">
@@ -50,7 +51,69 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+					// Add this after firebase initialization
+					async function testAuth() {
+						const testEmail = "normanmadeira@gmail.com"; // Replace with your test email
+						const testPassword = "Test@721"; // Replace with your test password
+
+						try {
+							console.log("Testing authentication...");
+							
+							// Attempt to sign in
+							const userCredential = await firebase.auth().signInWithEmailAndPassword(testEmail, testPassword);
+							console.log("Authentication successful:", userCredential.user);
+
+							// Check admin status
+							const uid = userCredential.user.uid;
+							const adminRef = db.ref(`admins/${uid}`);
+							const snapshot = await adminRef.once('value');
+							
+							if (snapshot.exists()) {
+								console.log("User is an admin");
+							} else {
+								console.log("User is not an admin");
+							}
+						} catch (error) {
+							console.error("Authentication failed:", error);
+						}
+					}
+
+					// Run the test
+					testAuth();
+					
+					// Add this after firebase initialization
+					function testDatabaseConnection() {
+						const connectedRef = db.ref('.info/connected');
+						
+						connectedRef.on('value', (snapshot) => {
+							if (snapshot.val() === true) {
+								console.log("Database connection active");
+							} else {
+								console.log("Database connection inactive");
+							}
+						});
+					}
+
+					// Run the test
+					testDatabaseConnection();
+
+		function togglePassword() {
+			const passwordField = document.getElementById('password');
+			const eyeIcon = document.querySelector('.password-toggle i');
+			
+			if (passwordField.type === 'password') {
+				passwordField.type = 'text'; // Show password
+				eyeIcon.classList.remove('fa-eye'); // Remove eye icon
+				eyeIcon.classList.add('fa-eye-slash'); // Add eye-slash icon
+			} else {
+				passwordField.type = 'password'; // Hide password
+				eyeIcon.classList.remove('fa-eye-slash'); // Remove eye-slash icon
+				eyeIcon.classList.add('fa-eye'); // Add eye icon
+			}
+		}
+
         async function login() {
+			firebase.auth().signOut().catch(() => {});
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const errorElement = document.getElementById('error');
@@ -77,21 +140,6 @@
                 document.getElementById('error').textContent = error.message;
                 console.error('Login Error:', error);
             }
-			
-			function togglePassword() {
-				const passwordField = document.getElementById('password');
-				const eyeIcon = document.querySelector('.password-toggle i');
-				
-				if (passwordField.type === 'password') {
-					passwordField.type = 'text'; // Show password
-					eyeIcon.classList.remove('fa-eye'); // Remove eye icon
-					eyeIcon.classList.add('fa-eye-slash'); // Add eye-slash icon
-				} else {
-					passwordField.type = 'password'; // Hide password
-					eyeIcon.classList.remove('fa-eye-slash'); // Remove eye-slash icon
-					eyeIcon.classList.add('fa-eye'); // Add eye icon
-				}
-			}
 			
 			function checkFontAwesome() {
 				const style = document.createElement('style');
