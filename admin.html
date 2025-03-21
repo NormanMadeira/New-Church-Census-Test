@@ -70,6 +70,10 @@
 		function showModal(message, isPrompt = true) {
 			return new Promise((resolve) => {
 				const modal = document.getElementById('customModal');
+				if (!modal) {
+					console.error('Modal element not found!');
+					return;
+				}
 				const input = document.getElementById('modalInput');
 				
 				document.getElementById('modalMessage').textContent = message;
@@ -104,32 +108,34 @@
 			try {
 				// Get email
 				const email = await showModal("Enter email:");
-				if (!email) return;
-				
+				if (!email || email.trim() === "") return;
+
 				// Get password
 				const password = await showModal("Enter password:");
-				if (!password) return;
+				if (!password || password.trim() === "") return;
 
 				// Get admin status
-				const isAdmin = await showModal("Make admin? (yes/no)", false);
+				const isAdmin = await showModal("Make admin? (Enter 'yes' or 'no')", false);
 				
 				// Create user
 				const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
 				const uid = userCredential.user.uid;
 				
-				// Update database
+				// Save user data
 				await firebase.database().ref(`users/${uid}`).set({
 					email: email,
 					created: Date.now()
 				});
 				
-				if (isAdmin === 'yes') { // Changed from boolean check to string comparison
+				// Set admin status
+				if (isAdmin && isAdmin.toLowerCase() === 'yes') {
 					await firebase.database().ref(`admins/${uid}`).set(true);
 				}
 				
-				// Force refresh user list
-				await loadUsers();
-				
+				// Refresh list
+				loadUsers();
+				alert('User created successfully!');
+
 			} catch (error) {
 				console.error('User creation failed:', error);
 				alert(`Error: ${error.message}`);
@@ -153,13 +159,23 @@
 		
 		// Add this modal initialization code
 		document.addEventListener('DOMContentLoaded', () => {
-			document.querySelector('.close').addEventListener('click', () => {
+			const closeButton = document.querySelector('.close');
+			const modal = document.getElementById('customModal');
+			
+			if (closeButton && modal) {
+				closeButton.addEventListener('click', () => {
+					modal.style.display = 'none';
+				});
+			}
+			
+			document.getElementById('modalCancel').addEventListener('click', () => {
 				document.getElementById('customModal').style.display = 'none';
 			});
-			
+
+			// Click outside handler
 			window.onclick = function(event) {
 				const modal = document.getElementById('customModal');
-				if (event.target == modal) {
+				if (event.target === modal) {
 					modal.style.display = "none";
 				}
 			}

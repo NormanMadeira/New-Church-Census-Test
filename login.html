@@ -123,13 +123,19 @@
 		
 		    // Add this modal initialization code
 		document.addEventListener('DOMContentLoaded', () => {
+			// Modal close handlers
 			document.querySelector('.close').addEventListener('click', () => {
 				document.getElementById('customModal').style.display = 'none';
 			});
 			
+			document.getElementById('modalCancel').addEventListener('click', () => {
+				document.getElementById('customModal').style.display = 'none';
+			});
+
+			// Click outside handler
 			window.onclick = function(event) {
 				const modal = document.getElementById('customModal');
-				if (event.target == modal) {
+				if (event.target === modal) {
 					modal.style.display = "none";
 				}
 			}
