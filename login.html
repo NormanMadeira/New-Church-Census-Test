@@ -47,8 +47,6 @@
             appId: "1:380854562551:web:98a768d575e38032372df2"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
 					// Add this after firebase initialization
@@ -77,6 +75,9 @@
 							console.error("Authentication failed:", error);
 						}
 					}
+
+					// Immediately after including firebase-config.js
+					console.log("ACTIVE FIREBASE CONFIG:", firebase.app().options);
 
 					// Run the test
 					testAuth();
